@@ -1,0 +1,35 @@
+# Credentials — NEVER commit these
+.env.local
+.env
+*.key
+*.pem
+*.p12
+
+# Token caches
+.token_cache
+.token_cache.json
+
+# Agent state
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

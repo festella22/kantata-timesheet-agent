@@ -1,0 +1,48 @@
+# config/project_mapping.yaml
+#
+# Seed dictionary: calendar event title patterns → Kantata project/task IDs.
+# Claude uses these as a priority reference before attempting its own inference.
+#
+# pattern: Python regex matched case-insensitively against the event title.
+# project_id: Kantata project ID (string).
+# task_id: Kantata task ID (string).
+# description_template: optional; {event_title} and {attendees} are interpolated.
+#
+# Run `python agent/timesheet_agent.py --list-projects` to print all open projects
+# with their IDs so you can populate this file accurately.
+
+mappings:
+  # Portfolio company work
+  - pattern: "(?i)brightwood.*(due diligence|dd|review)"
+    project_id: "REPLACE_WITH_REAL_ID"
+    task_id: "REPLACE_WITH_REAL_ID"
+    description_template: "Due diligence – {event_title}"
+
+  - pattern: "(?i)portfolio.*review|ops.*review"
+    project_id: "REPLACE_WITH_REAL_ID"
+    task_id: "REPLACE_WITH_REAL_ID"
+    description_template: "Portfolio ops review"
+
+  # Business development
+  - pattern: "(?i)BD|business development|LP.*call|investor.*call"
+    project_id: "REPLACE_WITH_REAL_ID"
+    task_id: "REPLACE_WITH_REAL_ID"
+    description_template: "BD – {event_title}"
+
+  # Internal PI Partners meetings
+  - pattern: "(?i)PI Partners|team standup|all.?hands|PI.*sync"
+    project_id: "REPLACE_WITH_INTERNAL_PROJECT_ID"
+    task_id: "REPLACE_WITH_INTERNAL_TASK_ID"
+    description_template: "Internal – {event_title}"
+
+  # Catch-all: any 1:1 or interview
+  - pattern: "(?i)1[:/]1|one[- ]on[- ]one|interview"
+    project_id: "REPLACE_WITH_INTERNAL_PROJECT_ID"
+    task_id: "REPLACE_WITH_INTERNAL_TASK_ID"
+
+defaults:
+  fallback_project_id: "REPLACE_WITH_FALLBACK_PROJECT_ID"
+  fallback_task_id: "REPLACE_WITH_FALLBACK_TASK_ID"
+  min_duration_minutes: 15       # events shorter than this are ignored
+  round_to_minutes: 15           # durations are rounded to nearest N minutes
+  max_hours_per_day: 10          # flag entries that would exceed this
