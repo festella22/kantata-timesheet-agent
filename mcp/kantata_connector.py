@@ -11,11 +11,6 @@ Authentication: OAuth2 client credentials flow.
   POST https://app.mavenlink.com/oauth/token
   with client_id + client_secret → access token.
 
-IMPLEMENTATION STATUS: Stub — scaffold is complete. Fill in:
-  1. Token acquisition (search TODO: AUTH)
-  2. Pagination loop for list endpoints (search TODO: PAGINATION)
-  3. Verify the correct Kantata API base URL for your workspace (search TODO: BASE_URL)
-
 Kantata API docs: https://developer.kantata.com/
 """
 
@@ -40,40 +35,31 @@ _token_cache: dict = {}
 
 
 # ---------------------------------------------------------------------------
-# Auth helper (TODO: AUTH)
+# Auth helper
 # ---------------------------------------------------------------------------
 
 def get_access_token() -> str:
-    """Return a valid Kantata access token using client credentials flow.
+    """Return a valid Kantata access token using client credentials flow."""
+    import requests
+    import time
 
-    Token is cached in memory for the duration of the process.
-    Replace with a persistent cache + refresh logic for production.
+    if _token_cache.get("expires_at", 0) > time.time() + 60:
+        return _token_cache["access_token"]
 
-    Example (Kantata OAuth2 client credentials):
-
-        import requests, time
-
-        if _token_cache.get("expires_at", 0) > time.time() + 60:
-            return _token_cache["access_token"]
-
-        resp = requests.post(
-            f"{KANTATA_BASE}/oauth/token",
-            data={
-                "grant_type": "client_credentials",
-                "client_id": os.environ["KANTATA_CLIENT_ID"],
-                "client_secret": os.environ["KANTATA_CLIENT_SECRET"],
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        _token_cache["access_token"] = data["access_token"]
-        _token_cache["expires_at"] = time.time() + data.get("expires_in", 3600)
-        return data["access_token"]
-    """
-    raise NotImplementedError(
-        "TODO: AUTH — implement OAuth2 client credentials in get_access_token()"
+    resp = requests.post(
+        f"{KANTATA_BASE}/oauth/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": os.environ["KANTATA_CLIENT_ID"],
+            "client_secret": os.environ["KANTATA_CLIENT_SECRET"],
+        },
+        timeout=15,
     )
+    resp.raise_for_status()
+    data = resp.json()
+    _token_cache["access_token"] = data["access_token"]
+    _token_cache["expires_at"] = time.time() + data.get("expires_in", 3600)
+    return data["access_token"]
 
 
 def kantata_get(path: str, params: dict | None = None) -> dict:
@@ -207,20 +193,29 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 def _list_projects() -> list[dict]:
     """List open projects.
 
-    TODO: PAGINATION — Kantata paginates via page[number] / page[size].
-    Loop until results_count < page_size.
+    Kantata paginates via page[number] / page[size].
+    Loops until all pages are fetched.
     """
-    data = kantata_get("/workspaces", params={"include": "primary_counterpart"})
     projects = []
-    for ws in data.get("workspaces", {}).values():
-        projects.append(
-            {
-                "project_id": str(ws["id"]),
-                "title": ws.get("title", ""),
-                "client_name": ws.get("primary_counterpart", {}).get("name", ""),
-                "status": ws.get("status", ""),
-            }
+    page = 1
+    while True:
+        data = kantata_get(
+            "/workspaces",
+            params={"include": "primary_counterpart", "page": page, "per_page": 200},
         )
+        for ws in data.get("workspaces", {}).values():
+            projects.append(
+                {
+                    "project_id": str(ws["id"]),
+                    "title": ws.get("title", ""),
+                    "client_name": ws.get("primary_counterpart", {}).get("name", ""),
+                    "status": ws.get("status", ""),
+                }
+            )
+        meta = data.get("meta", {})
+        if len(projects) >= meta.get("count", len(projects)):
+            break
+        page += 1
     return projects
 
 
