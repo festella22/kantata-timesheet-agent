@@ -18,6 +18,7 @@ Usage:
 """
 
 import argparse
+import asyncio
 import json
 import logging
 import os
@@ -30,6 +31,8 @@ import anthropic
 import yaml
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 load_dotenv(".env.local")
 
@@ -43,6 +46,9 @@ MODEL = "claude-opus-4-8"
 PENDING_STATE_FILE = Path("data/pending_timesheets.json")
 MCP_CALENDAR = Path("mcp/calendar_connector.py")
 MCP_KANTATA = Path("mcp/kantata_connector.py")
+
+_CALENDAR_TOOLS = {"get_calendar_events", "get_teams_meetings"}
+_KANTATA_TOOLS = {"list_projects", "list_tasks", "list_time_entries", "create_time_entry"}
 
 
 # ---------------------------------------------------------------------------
@@ -110,26 +116,34 @@ Return only the JSON object. No prose.
 
 
 # ---------------------------------------------------------------------------
-# MCP client setup
+# MCP tool dispatch
 # ---------------------------------------------------------------------------
 
-def build_mcp_params() -> list[anthropic.types.beta.BetaRequestMCPServerToolDefinitionParam]:
-    """Return MCP server parameters for both connectors."""
-    from anthropic.types.beta import BetaRequestMCPServerURLDefinitionParam  # noqa: F401
+async def _call_mcp_tool(server_path: Path, tool_name: str, args: dict) -> Any:
+    """Start an MCP server subprocess, call one tool, return its result."""
+    params = StdioServerParameters(command=sys.executable, args=[str(server_path)])
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool(tool_name, args)
+            return json.loads(result.content[0].text)
 
-    python = sys.executable
-    return [
-        {
-            "type": "url",
-            "name": "calendar_connector",
-            "url": f"stdio://{python} {MCP_CALENDAR}",
-        },
-        {
-            "type": "url",
-            "name": "kantata_connector",
-            "url": f"stdio://{python} {MCP_KANTATA}",
-        },
-    ]
+
+def _dispatch_tool(name: str, args: dict) -> Any:
+    """Dispatch a tool call to the appropriate MCP server."""
+    if name in _CALENDAR_TOOLS:
+        server_path = MCP_CALENDAR
+    elif name in _KANTATA_TOOLS:
+        server_path = MCP_KANTATA
+    else:
+        log.warning("Unknown tool: %s", name)
+        return {"error": f"Unknown tool: {name}"}
+
+    try:
+        return asyncio.run(_call_mcp_tool(server_path, name, args))
+    except Exception as exc:
+        log.error("MCP tool call failed (%s): %s", name, exc)
+        return {"error": str(exc)}
 
 
 def get_mcp_client() -> Anthropic:
@@ -194,15 +208,6 @@ def run_tool_loop(
         messages.append({"role": "user", "content": tool_results})
 
     return "", messages
-
-
-def _dispatch_tool(name: str, args: dict) -> Any:
-    """
-    Placeholder dispatcher — in production these calls go through the MCP client.
-    Replace with actual MCP tool invocation once the MCP servers are wired up.
-    """
-    log.warning("_dispatch_tool is a stub for tool '%s'. Wire up MCP servers.", name)
-    return {"error": f"Tool '{name}' not yet wired to MCP server."}
 
 
 # ---------------------------------------------------------------------------
@@ -540,7 +545,7 @@ def main() -> None:
             client, start_date, end_date, mapping, dry_run=dry_run
         )
         if not entries:
-            log.error("No draft entries generated. Check MCP server stubs.")
+            log.error("No draft entries generated. Check credentials and project_mapping.yaml.")
             sys.exit(1)
         save_pending(entries, start_date, end_date)
 
