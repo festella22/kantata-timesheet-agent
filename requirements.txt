@@ -1,9 +1,0 @@
-anthropic[mcp]>=0.57.0
-mcp>=1.0.0
-msgraph-sdk>=1.0.0
-azure-identity>=1.15.0
-requests>=2.31.0
-python-dotenv>=1.0.0
-pyyaml>=6.0.1
-pytest>=8.0.0
-responses>=0.25.0

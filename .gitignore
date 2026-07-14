@@ -1,35 +1,15 @@
-# Credentials — NEVER commit these
-.env.local
+# Credentials and filled config — NEVER commit these
+kantata.env
 .env
+.env.local
 *.key
 *.pem
-*.p12
 
-# Token caches
-.token_cache
-.token_cache.json
-
-# Agent state
+# Agent state (only exists if someone runs the task from the repo dir)
+pending_timesheet.json
 data/
 
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-*.egg
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# macOS
+# OS / IDE
 .DS_Store
-
-# IDE
 .vscode/
 .idea/

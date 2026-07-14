@@ -1,15 +1,15 @@
-# config/project_mapping.yaml
+# config/project_mapping.yaml — TEMPLATE. Do not fill in real IDs here.
 #
-# Seed dictionary: calendar event title patterns → Kantata project/task IDs.
-# Claude uses these as a priority reference before attempting its own inference.
+# install.ps1 copies this to ~/.claude/kantata-timesheet/project_mapping.yaml —
+# fill in the REPLACE_* values THERE. The filled copy contains real client names
+# and project IDs and must never be committed to this repo.
 #
-# pattern: Python regex matched case-insensitively against the event title.
-# project_id: Kantata project ID (string).
-# task_id: Kantata task ID (string).
-# description_template: optional; {event_title} and {attendees} are interpolated.
+# pattern: regex matched case-insensitively against the calendar event title.
+# project_id / task_id: Kantata IDs (strings).
+# description_template: optional; {event_title} is interpolated.
 #
-# Run `python agent/timesheet_agent.py --list-projects` to print all open projects
-# with their IDs so you can populate this file accurately.
+# To get your IDs: run the scheduled task once with placeholder config — it
+# emails you a setup checklist including your open Kantata projects and IDs.
 
 mappings:
   # Portfolio company work
