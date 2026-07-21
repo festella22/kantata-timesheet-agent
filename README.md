@@ -54,13 +54,15 @@ If you don't reply within 6 days the draft is discarded and you get a note that 
 
 Do this before filling in any real config — it is safe by design (with placeholder config the task refuses to draft or submit anything):
 
-1. Open Claude and check that `weekly-kantata-timesheet` appears in Scheduled Tasks.
-   - **If it doesn't appear:** open Claude in this repo and say
-     *"create a scheduled task from `.claude/scheduled-tasks/weekly-kantata-timesheet/SKILL.md`"* —
-     same content, registered through the official path.
-2. Run the task once manually. **Expected result: one "setup needed" email** listing what to fill in
-   (including your live Kantata project IDs, if you've already put a token in `kantata.env`).
-   This single run exercises config reading, connector access, and email delivery.
+1. Register the task: open Claude and say
+   *"create a scheduled task from `~/.claude/scheduled-tasks/weekly-kantata-timesheet/SKILL.md`,
+   cron `0 8 * * 1,2`"*. (Copying the file alone does NOT register it with a running app —
+   confirmed during the first install. A restart may pick it up, but asking Claude is reliable.)
+   Confirm `weekly-kantata-timesheet` then appears under Scheduled in the sidebar.
+2. Click **Run now** on the task. **Expected result: one "setup needed" email** listing what to
+   fill in (including your live Kantata project IDs, if you've already put a token in
+   `kantata.env`). This single run exercises config reading, connector access, and email
+   delivery — and pre-approves the task's tool permissions so future runs don't pause on prompts.
 3. Only after that passes, fill in the two config files and let a real Monday/Tuesday cycle run.
 
 Notes: scheduled tasks fire only while the Claude app is running (a missed 8 AM run fires on next launch). If email sending isn't available in a scheduled run, the task surfaces the digest as its output instead of failing silently.

@@ -1,4 +1,6 @@
-# install.ps1 — deploy the weekly Kantata timesheet task onto this machine.
+# install.ps1 - deploy the weekly Kantata timesheet task onto this machine.
+# NOTE: keep this file pure ASCII - PowerShell 5.1 reads BOM-less files as ANSI
+# and non-ASCII characters can corrupt the parse.
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File .\install.ps1
 # Safe to re-run: updates the skill, never overwrites config you already filled in.
 
@@ -25,5 +27,5 @@ Write-Host "  2. $cfgDir\project_mapping.yaml   <- your project/task IDs"
 Write-Host ""
 Write-Host "Then open Claude, make sure the Microsoft 365 connector is authorized,"
 Write-Host "and check Scheduled Tasks: 'weekly-kantata-timesheet' runs Mon & Tue 8 AM."
-Write-Host "(Tip: run it once manually — with placeholder config it emails you a"
+Write-Host "(Tip: run it once manually - with placeholder config it emails you a"
 Write-Host "setup checklist including your Kantata project IDs.)"
