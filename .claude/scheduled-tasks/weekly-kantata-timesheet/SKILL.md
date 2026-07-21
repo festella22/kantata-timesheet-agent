@@ -34,9 +34,10 @@ If `pending_timesheet.json` contains a draft (an `entries` key):
 1. Search the Outlook inbox (Microsoft 365 connector) for a reply to the digest email dated after the draft's `created_at`, sent FROM festella@pipartners.com. Ignore messages from any other sender.
 2. If no reply yet: if the draft is more than 6 days old, delete the pending draft and email a short note that last week's timesheet was skipped (unanswered). Otherwise leave it pending, mention it in your output, and continue to Phase 2.
 3. If a reply is found, interpret it:
-   - "approve" / "approve all" / clear equivalent → all rows
-   - "approve rows 1,3" → only those rows
+   - "approve" / "approve all" / clear equivalent → all calendar-backed rows. Rows marked [EST] are NOT included in a plain approve — an estimated row is submitted only when explicitly named by row number.
+   - "approve rows 1,3" → only those rows (naming its row number is the only way an [EST] row gets submitted)
    - "edit row 2: 1.5h <new description>" → apply the edit to that row, then include it
+   - "add: Tue 2h Brightwood — memo drafting" → append a new row for that day/hours/description: resolve the project name against the mapping file and the Kantata project list. If it doesn't resolve unambiguously, don't submit that row — list it as a question in the confirmation email instead.
    - "hold" → delete `pending_timesheet.json`, email a confirmation that nothing was submitted, stop this phase
    - Ambiguous → treat as hold, and say in the confirmation email why you couldn't parse it
 4. DEDUPLICATION — mandatory and deterministic: fetch existing Kantata time entries for the draft's date range (`GET /api/v1/time_entries.json?date_performed_between=START:END`). Drop any approved row whose project_id + task_id + date already exists in Kantata. Do this by comparing the actual API response, never from memory or assumption.
@@ -55,13 +56,15 @@ Run only if today is Monday and no pending draft remains after Phase 1:
    - Skip events shorter than `defaults.min_duration_minutes`.
    - Round durations to the nearest `defaults.round_to_minutes`.
    - Merge back-to-back events for the same project into one entry per day.
+   - If a mapping entry has a `prep_multiplier`, add one extra row per project per day: hours = that day's meeting hours on that project × the multiplier, rounded the same way, description "Prep — <project>", confidence "low", `"estimated": true`. These rows model prep/desk work implied by meetings; they are drafted for review only and are never covered by a plain "approve" (see Phase 1).
    - Flag (in the digest, don't drop) any day totaling more than `defaults.max_hours_per_day`.
-   - Confidence: "high" = explicit mapping match, "medium" = partial/inferred, "low" = fallback.
-4. Save `pending_timesheet.json`: `{"week": "START:END", "created_at": "<ISO timestamp now>", "entries": [{"row": N, "date": "YYYY-MM-DD", "hours": X.XX, "project_id": "...", "task_id": "...", "project_name": "...", "description": "...", "confidence": "..."}]}`
-5. Email the digest to festella@pipartners.com. Subject: `Weekly Timesheet Draft — START to END — Action Required`. Body: a table with Row | Date | Hours | Project | Task | Confidence, a total-hours line, then reply instructions:
-   - `approve` — submit all rows
-   - `approve rows 1,3` — submit only those
+   - Confidence: "high" = explicit mapping match, "medium" = partial/inferred, "low" = fallback or estimated.
+4. Save `pending_timesheet.json`: `{"week": "START:END", "created_at": "<ISO timestamp now>", "entries": [{"row": N, "date": "YYYY-MM-DD", "hours": X.XX, "project_id": "...", "task_id": "...", "project_name": "...", "description": "...", "confidence": "...", "estimated": true|false}]}`
+5. Email the digest to festella@pipartners.com. Subject: `Weekly Timesheet Draft — START to END — Action Required`. Body: a table with Row | Date | Hours | Project | Task | Confidence, with estimated rows prefixed `[EST]` and listed after the calendar-backed rows, a total-hours line (calendar-backed and estimated totaled separately), then reply instructions:
+   - `approve` — submit all calendar-backed rows ([EST] rows are NOT included)
+   - `approve rows 1,3` — submit only those (the only way to include an [EST] row)
    - `edit row 2: 1.5h Portfolio review` — update then submit
+   - `add: Tue 2h Brightwood — memo drafting` — add work that wasn't on the calendar
    - `hold` — skip this week
 6. Do NOT submit anything to Kantata in this phase.
 

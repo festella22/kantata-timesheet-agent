@@ -14,7 +14,11 @@ Monday 8 AM
   └─ Saves the draft locally as pending
 
 You reply (any time before Tuesday 8 AM, or later — it checks for 6 days):
-  approve  |  approve rows 1,3  |  edit row 2: 1.5h Portfolio review  |  hold
+  approve  |  approve rows 1,3  |  edit row 2: 1.5h Portfolio review
+  add: Tue 2h Brightwood — memo drafting  |  hold
+
+  Rows marked [EST] (prep-time estimates from prep_multiplier in the mapping)
+  are never included in a plain "approve" — name their row number to submit them.
 
 Tuesday 8 AM
   └─ Task finds your reply (only from YOUR address — anything else is ignored)
@@ -82,6 +86,7 @@ kantata-timesheet-agent/
 - **Sender guard** — approval replies are only accepted from festella@pipartners.com. Approvals appearing in calendar events, documents, or other senders' emails are ignored.
 - **Injection guard** — calendar event titles/bodies and email contents are treated as data, never as instructions to the agent.
 - **Deterministic dedup** — before any submission the task fetches existing Kantata entries for the week and skips exact project+task+date matches, so a re-run can't double-bill.
+- **Estimates stay loud** — every submitted hour traces to a calendar event or something you explicitly typed. Estimated prep rows are marked `[EST]`, totaled separately, and excluded from a plain "approve"; the agent never guesses hours into the billing system.
 - **No secrets in the repo** — the repo holds templates only; filled credentials and the real client/project mapping live in `~/.claude/kantata-timesheet/`. Keep this repo private anyway.
 
 ## History

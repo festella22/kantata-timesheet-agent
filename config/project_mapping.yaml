@@ -7,6 +7,10 @@
 # pattern: regex matched case-insensitively against the calendar event title.
 # project_id / task_id: Kantata IDs (strings).
 # description_template: optional; {event_title} is interpolated.
+# prep_multiplier: optional; drafts an extra [EST] prep row per day on this
+#   project (meeting hours × multiplier). [EST] rows are never submitted by a
+#   plain "approve" — you must name their row number. Start at 0.5–1.0 for
+#   prep-heavy client work; omit for internal meetings.
 #
 # To get your IDs: run the scheduled task once with placeholder config — it
 # emails you a setup checklist including your open Kantata projects and IDs.
@@ -17,6 +21,7 @@ mappings:
     project_id: "REPLACE_WITH_REAL_ID"
     task_id: "REPLACE_WITH_REAL_ID"
     description_template: "Due diligence – {event_title}"
+    prep_multiplier: 1.0   # each meeting hour drafts ~1h of [EST] prep for review
 
   - pattern: "(?i)portfolio.*review|ops.*review"
     project_id: "REPLACE_WITH_REAL_ID"
